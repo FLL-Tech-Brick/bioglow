@@ -21,7 +21,9 @@ def gyro_straight(rotations, speed, motor1, motor2):
 
     direction = 1 if rotations >= 0 else -1
     target_degrees = abs(rotations) * 360
-    base_speed = speed * 10 * direction
+    base_speed = speed * 10 
+    accel = 0
+    accel_increment = 0.001
 
     # reset yaw angle to 0
     hub.imu.reset_heading(0)
@@ -29,13 +31,16 @@ def gyro_straight(rotations, speed, motor1, motor2):
     # Use the same reference motor as the block version.
     while abs(motor1.angle()) <= target_degrees:
         correction = hub.imu.heading() * -3
-        motor1.run(base_speed + correction)
-        motor2.run((base_speed - correction))
-        wait(0.5)
+        actual_speed = direction * base_speed * accel
+        motor1.run(-(actual_speed + correction))
+        motor2.run((actual_speed - correction))
+        if abs(motor1.angle()) >= target_degrees // 2:
+                accel -= accel_increment if accel > 0 else 0
+        else:
+                accel += accel_increment if accel < 1 else 0
+        wait(2)
 
-    # stop moving, then wait 0.5 seconds
-    motor1.stop()
-    motor2.stop()
+    wait(1000)
 
 # gyro turn function
 def gyro_left(degrees, motor1, motor2):
